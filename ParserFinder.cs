@@ -4,7 +4,6 @@ using System.Reflection;
 using Android.Content;
 using Android.Widget;
 using DLBuddy.Parsers;
-
 namespace DLBuddy
 {
     public static class ParserFinder

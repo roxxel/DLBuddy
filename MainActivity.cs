@@ -28,13 +28,13 @@ namespace DLBuddy
                 var dl = new Downloader(this);
 
                 var uri = this.Intent.Extras.GetString("android.intent.extra.TEXT");
-                if (dl.TryDownloadFile(uri))
+                if (dl.TryDownloadFile(uri, out var e))
                 {
                     Toast.MakeText(this, $"Enqueued download.", ToastLength.Short).Show();
                 }
                 else
                 {
-                    Toast.MakeText(this, $"Failed downloading.", ToastLength.Short).Show();
+                    Toast.MakeText(this, $"Failed downloading. {e?.Message}", ToastLength.Short).Show();
                 }
                 // use libvideo for youtube
             }

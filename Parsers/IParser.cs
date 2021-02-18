@@ -16,7 +16,7 @@
         /// <param name="source">URL to shared post.</param>
         /// <param name="result">Raw video URL fetched from post if succeeded, null if failed.</param>
         /// <returns>Whether fetching MP4 URL succeeded.</returns>
-        bool TryFetchVideoUrl(string source, out string result);
+        bool TryFetchVideoUrl(string source, out string[] result);
 
         /// <summary>
         /// Gets the parser name.

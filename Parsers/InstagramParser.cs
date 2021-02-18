@@ -1,34 +1,63 @@
-﻿using System;
+﻿using HtmlAgilityPack;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
 using System.Net;
-using System.Text.RegularExpressions;
 
 namespace DLBuddy.Parsers
 {
     public class InstagramParser : IParser
     {
-        const string mp4regex = "property=\"og:video\" content=\"https://.*?\"";
 
         public string GetParserName()
         {
             return "instagram";
         }
 
-        // could possibly just use substring magic because of og:video tags.
-        public bool TryFetchVideoUrl(string source, out string result)
+        public bool TryFetchVideoUrl(string source, out string[] result)
         {
             result = null;
             try
             {
                 var web = new WebClient();
+                Uri uri = new Uri(source);
+                var page = web.DownloadString($"{uri.Scheme}://{uri.Host}{uri.AbsolutePath}?__a=1");
+                var urls = new List<string>();
 
-                var page = web.DownloadString(source);
+                var json = JObject.Parse(page);
+                if (json["graphql"]["shortcode_media"]["edge_sidecar_to_children"] == null)
+                {
+                    if (json["graphql"]["shortcode_media"]["is_video"].Value<bool>())
+                    {
+                        urls.Add(json["graphql"]["shortcode_media"]["video_url"].Value<string>());
+                    }
+                    else
+                    {
+                        urls.Add(json["graphql"]["shortcode_media"]["display_url"].Value<string>());
+                    }
+                }
+                else
+                {
+                    var edges = json["graphql"]["shortcode_media"]["edge_sidecar_to_children"]["edges"].AsJEnumerable();
 
-                var regx = new Regex(mp4regex);
-                var match = regx.Match(page).Value;
-                result = match.Substring(29);
-                result = result.Remove(result.Length - 1);
+                    foreach (var edge in edges)
+                    {
+                        var isVideo = edge["node"]["is_video"].Value<bool>();
+                        if (isVideo)
+                        {
+                            urls.Add(edge["node"]["video_url"].Value<string>());
+                        }
+                        else
+                        {
+                            urls.Add(edge["node"]["display_url"].Value<string>());
+                        }
+                    }
+
+                }
+                result = urls.ToArray();
+
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 return false;
             }
@@ -42,7 +71,7 @@ namespace DLBuddy.Parsers
             // if valid insta, this should be a url
             var url = input.Substring(input.IndexOf("https://"));
 
-            if (url.StartsWith("https://www.instagram.com/p/"))
+            if (url.StartsWith("https://www.instagram.com/p/") || url.StartsWith("https://www.instagram.com/tv/"))
             {
                 result = url;
                 return true;
